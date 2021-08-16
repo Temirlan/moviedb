@@ -1,10 +1,17 @@
-import React from "react"
-import { screen } from "@testing-library/react"
-import { render } from "./test-utils"
-import { App } from "./App"
+import '@testing-library/jest-dom';
 
-test("renders learn react link", () => {
-  render(<App />)
-  const linkElement = screen.getByText(/learn chakra/i)
-  expect(linkElement).toBeInTheDocument()
-})
+import * as React from 'react';
+import { render, fireEvent } from '@testing-library/react';
+import { SearchForm } from './components';
+import { act } from 'react-dom/test-utils';
+
+test('calls correct function on Submit', async () => {
+  const onClick = jest.fn();
+  const { getByText } = render(<SearchForm initialValues={{ search: '' }} onSubmit={onClick} />);
+
+  await act(async () => {
+    fireEvent.click(getByText('Submit'));
+  });
+
+  expect(onClick).toHaveBeenCalled();
+});

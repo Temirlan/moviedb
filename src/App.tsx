@@ -1,38 +1,87 @@
-import * as React from "react"
-import {
-  ChakraProvider,
-  Box,
-  Text,
-  Link,
-  VStack,
-  Code,
-  Grid,
-  theme,
-} from "@chakra-ui/react"
-import { ColorModeSwitcher } from "./ColorModeSwitcher"
-import { Logo } from "./Logo"
+import * as React from 'react';
+import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
+import { ChakraProvider, theme } from '@chakra-ui/react';
+import { Genre } from './models';
+import TmdbService from './services/TmdbService';
+import { ResponseSearchMovies } from './types';
+import { SearchMovies } from './pages';
+import Movie from './pages/Movie/Movie';
+import { MoviePreview } from './models/index';
+import MovieFavoritesList from './pages/MovieFavoritesList/MovieFavoritesList';
 
-export const App = () => (
-  <ChakraProvider theme={theme}>
-    <Box textAlign="center" fontSize="xl">
-      <Grid minH="100vh" p={3}>
-        <ColorModeSwitcher justifySelf="flex-end" />
-        <VStack spacing={8}>
-          <Logo h="40vmin" pointerEvents="none" />
-          <Text>
-            Edit <Code fontSize="xl">src/App.tsx</Code> and save to reload.
-          </Text>
-          <Link
-            color="teal.500"
-            href="https://chakra-ui.com"
-            fontSize="2xl"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn Chakra
-          </Link>
-        </VStack>
-      </Grid>
-    </Box>
-  </ChakraProvider>
-)
+export const App = () => {
+  const [searchMovies, setSearchMovies] = React.useState<ResponseSearchMovies | undefined>();
+  const [searchQuery, setSearchQuery] = React.useState<string>('');
+  const [genres, setGenres] = React.useState<Genre[]>([]);
+  const [isStartFetchingSearchMovies, setIsStartFetchingSearchMovies] =
+    React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    const load = async () => {
+      try {
+        setIsStartFetchingSearchMovies(true);
+        const searchMoviesPromise = TmdbService.searchMovies({
+          query: '',
+          page: 1,
+        });
+
+        const getGenresListPromise = TmdbService.getGenresList();
+
+        const [moviesResponse, genresResponse] = await Promise.all([
+          searchMoviesPromise,
+          getGenresListPromise,
+        ]);
+
+        setSearchMovies(moviesResponse);
+        setGenres(genresResponse.genres);
+      } catch (error) {
+        console.warn(error);
+      }
+      setIsStartFetchingSearchMovies(false);
+    };
+
+    load();
+  }, []);
+
+  const getGenresNames = React.useCallback(
+    (genresIds: MoviePreview['genre_ids']) => {
+      return genres
+        .filter((g) => genresIds.includes(g.id))
+        .map((g) => {
+          return g.name;
+        })
+        .join(' ● ');
+    },
+    [genres],
+  );
+
+  return (
+    <ChakraProvider theme={theme}>
+      <Router>
+        <div>
+          <Switch>
+            <Route exact path="/">
+              {searchMovies && (
+                <SearchMovies
+                  setSearchMovies={setSearchMovies}
+                  searchQuery={searchQuery}
+                  searchMovies={searchMovies}
+                  getGenresNames={getGenresNames}
+                  isLoading={isStartFetchingSearchMovies}
+                  setIsLoading={setIsStartFetchingSearchMovies}
+                  setSearchQuery={setSearchQuery}
+                />
+              )}
+            </Route>
+            <Route exact path="/movie/favorites">
+              <MovieFavoritesList getGenresNames={getGenresNames} />
+            </Route>
+            <Route exact path="/movie/:id">
+              <Movie getGenresNames={getGenresNames} />
+            </Route>
+          </Switch>
+        </div>
+      </Router>
+    </ChakraProvider>
+  );
+};
