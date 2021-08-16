@@ -1,3 +1,18 @@
+# MovieDb
+
+## Demo
+
+```
+https://test-moviedb.herokuapp.com
+```
+## Configuration
+Add config file ( .env file )
+```
+REACT_APP_TMDB_API_URL=https://api.themoviedb.org/3
+REACT_APP_TMDB_GET_POSTER_URL=https://image.tmdb.org/t/p
+REACT_APP_TMDB_AUTH_TOKEN=
+```
+
 This project was bootstrapped with
 [Create React App](https://github.com/facebook/create-react-app).
 
